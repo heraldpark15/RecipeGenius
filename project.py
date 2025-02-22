@@ -1,5 +1,7 @@
 import streamlit as st
 from openai import OpenAI
+from imageGeneration import generate_image
+
 
 # Sidebar for OpenAI API Key
 with st.sidebar:
@@ -23,21 +25,6 @@ client = OpenAI(
   api_key="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",
 )
 
-# completion = client.chat.completions.create(
-#   extra_headers={
-#     "HTTP-Referer": "<YOUR_SITE_URL>", # Optional. Site URL for rankings on openrouter.ai.
-#     "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
-#   },
-#   extra_body={},
-#   model="deepseek/deepseek-r1:free",
-#   messages=[
-#     {
-#       "role": "user",
-#       "content": "What is your name?"
-#     }
-#   ]
-# )
-# print(completion.choices[0].message.content)
 
 # Initialize session state for user profile
 if "user_profile" not in st.session_state:
@@ -121,3 +108,15 @@ if prompt := st.chat_input():
     # Append assistant response
     st.session_state.messages.append({"role": "assistant", "content": msg})
     st.chat_message("assistant").write(msg)
+
+# User prompt for image generation
+prompt = st.text_input("Enter a dish name or description:")
+
+if st.button("Generate Image"):
+    if prompt:
+        with st.spinner("Generating image..."):
+            image = generate_image(prompt)
+            if image:
+                st.image(image, caption="Generated Image", use_container_width=True)
+    else:
+        st.warning("Please enter a description for the image!")
