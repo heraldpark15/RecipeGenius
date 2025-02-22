@@ -121,3 +121,5 @@ if prompt := st.chat_input():
     # Append assistant response
     st.session_state.messages.append({"role": "assistant", "content": msg})
     st.chat_message("assistant").write(msg)
+
+print("Hello world")s
