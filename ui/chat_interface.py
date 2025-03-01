@@ -10,7 +10,9 @@ class ChatInterface:
         for msg in self.state_manager.messages:
             st.chat_message(msg["role"]).write(msg["content"])
         
-        if not self.state_manager.button_clicked:
+        self.state_manager.show_initial_message()        
+
+        if st.session_state["initial_message_shown"]:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Ingredients"):
@@ -18,11 +20,20 @@ class ChatInterface:
             with col2:
                 if st.button("Ideas"):
                     self.state_manager.set_button_clicked("ideas")
+            
+            # Add CSS to adjust button positioning
+            st.markdown("""
+                <style>
+                    .stButton > button {
+                        width: 100%;  /* Make buttons span the full width of their column */
+                        padding: 15px; /* Adjust padding to make buttons more visually balanced */
+                        font-size: 16px; /* Adjust font size */
+                    }
+                </style>
+            """, unsafe_allow_html=True)
         
         if self.state_manager.button_clicked:
             self.handle_button_click()
-
-        self.state_manager.show_initial_message()        
 
         user_input = st.chat_input("Enter your message:")
         if user_input:
@@ -43,9 +54,19 @@ class ChatInterface:
         self.state_manager.add_message("user", user_input)
         st.chat_message("user").write(user_input)
 
+        user_profile = {}
+        
+        dietary_preference = st.session_state["profile"].get("dietary_preference")
+        if dietary_preference:
+            user_profile["dietary_preference"] = dietary_preference
+        
+        allergies = st.session_state["profile"].get("allergies")
+        if allergies:
+            user_profile["allergies"] = allergies
+
         # Get response from OpenAI
         with st.spinner("Generating recipe..."):
-            response = self.openai_service.generate_recipe(self.state_manager.messages)
+            response = self.openai_service.generate_recipe(self.state_manager.messages, user_profile)
         
         self.state_manager.add_message("assistant", response)
         st.chat_message("assistant").write(response)
