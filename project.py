@@ -1,31 +1,28 @@
 import streamlit as st
 from openai import OpenAI
-from imageGeneration import generate_image
+import os
+from services.image_service import ImageService
+from dotenv import load_dotenv
 
-<<<<<<< HEAD
-=======
+load_dotenv()  
+api_key = os.getenv("API_KEY")
 
->>>>>>> 9a4412dd33a7b2847d628631cbc410b4147f9fb3
 # Sidebar for OpenAI API Key
 with st.sidebar:
-    openai_api_key = st.text_input("Enter Your API Key", key="chatbot_api_key", type="password")
+    # Uncomment block for deployment
+    # openai_api_key = st.text_input("Enter Your API Key", key="chatbot_api_key", type="password")
+    
+    # Use for development only
+    openai_api_key = api_key
 
 # App title
 st.title("RecipeGenius 🧞 - From Ingredients to Plate 🍽️")
 
-<<<<<<< HEAD
-=======
-content = '''
-Hey! I'm a recipe bot for meals and drinks
-'''
-
->>>>>>> 9a4412dd33a7b2847d628631cbc410b4147f9fb3
 # Ensure API key is provided
 if not openai_api_key:
     st.warning("Please enter your OpenAI API key in the sidebar to continue.")
     st.stop()
 
-<<<<<<< HEAD
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",
   api_key=openai_api_key,
@@ -40,7 +37,7 @@ if "user_profile" not in st.session_state:
 
 # Ensure 'button_clicked' and 'messages' are initialized
 if "button_clicked" not in st.session_state:
-    st.session_state["button_clicked"] = None  # Initialize button state to None
+    st.session_state["button_clicked"] = None  
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
@@ -54,8 +51,8 @@ st.sidebar.subheader("🎯 Personalize Your Experience")
 dietary_preference = st.sidebar.selectbox("Do you have any dietary preferences?", 
                                           ["Select", "Vegetarian", "Vegan", "None"])
 
-# Input for allergies
-allergies = st.sidebar.text_area("List your allergies (comma separated, e.g., nuts, gluten)", 
+# Input for allergies (TODO: clean text input)
+allergies = st.sidebar.text_area("Please list allergies, if any (comma separated, e.g., nuts, gluten)", 
                                  placeholder="e.g., nuts, gluten")
 
 if dietary_preference != "Select":
@@ -110,38 +107,12 @@ if st.session_state["initial_message_shown"]:
 # Handle button click responses
 if st.session_state["button_clicked"] == "ingredients":
     msg = "Great! Please list the ingredients you have, and I'll suggest a recipe considering your dietary preferences and allergies."
-=======
 
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",
   api_key="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",
 )
 
-
-# Initialize session state for user profile
-if "user_profile" not in st.session_state:
-    st.session_state["user_profile"] = {
-        "goal": None,
-        "experience": None,
-        "workout_type": None
-    }
-
-# Sidebar user profile setup
-st.sidebar.subheader("🎯 Personalize Your Experience")
-
-goal = st.sidebar.selectbox("What's your fitness goal?", 
-                            ["Select", "Weight Loss", "Muscle Gain", "Endurance", "General Fitness"])
-experience = st.sidebar.selectbox("What's your experience level?", 
-                                  ["Select", "Beginner", "Intermediate", "Advanced"])
-workout_type = st.sidebar.selectbox("Preferred Workout Type:", 
-                                    ["Select", "Strength Training", "Cardio", "Yoga", "Mixed"])
-
-if goal != "Select":
-    st.session_state["user_profile"]["goal"] = goal
-if experience != "Select":
-    st.session_state["user_profile"]["experience"] = experience
-if workout_type != "Select":
-    st.session_state["user_profile"]["workout_type"] = workout_type
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -170,7 +141,6 @@ if not st.session_state["button_clicked"]:
 # Handle button click responses
 if st.session_state["button_clicked"] == "ingredients":
     msg = "Great! Please list the ingredients you have, and I'll suggest a recipe."
->>>>>>> 9a4412dd33a7b2847d628631cbc410b4147f9fb3
     st.session_state.messages.append({"role": "assistant", "content": msg})
     st.chat_message("assistant").write(msg)
     st.session_state["button_clicked"] = None  # Reset to allow further interaction
@@ -181,11 +151,8 @@ elif st.session_state["button_clicked"] == "ideas":
     st.chat_message("assistant").write(msg)
     st.session_state["button_clicked"] = None  # Reset to allow further interaction
 
-<<<<<<< HEAD
 # Chat input for recipe generation
-=======
 # Chat input
->>>>>>> 9a4412dd33a7b2847d628631cbc410b4147f9fb3
 if prompt := st.chat_input():
     if not openai_api_key:
         st.info("Please add your OpenAI API key to continue.")
@@ -195,7 +162,6 @@ if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
-<<<<<<< HEAD
     # Create a custom prompt considering dietary preferences and allergies
     dietary_preference = st.session_state["user_profile"]["dietary_preference"]
     allergies = st.session_state["user_profile"]["allergies"]
@@ -225,7 +191,7 @@ if prompt := st.chat_input():
 
     # Generate image of the plate based on the dish description
     with st.spinner("Generating image of the plate..."):
-        image = generate_image(msg)  # Generate image from the recipe text
+        image = ImageService(msg)  # Generate image from the recipe text
         if image:
             # Apply custom CSS to center the image
             st.markdown("""
@@ -263,17 +229,6 @@ if prompt := st.chat_input():
                 st.write("Thanks for using RecipeGenius! Have a great day!")  # Show the thank you message
 
 
-
-
-
-
-
-
-    
-
-
-
-=======
     # client = OpenAI(api_key=openai_api_key)
     response = client.chat.completions.create(
         model="deepseek/deepseek-r1:free",
@@ -291,9 +246,8 @@ prompt = st.text_input("Enter a dish name or description:")
 if st.button("Generate Image"):
     if prompt:
         with st.spinner("Generating image..."):
-            image = generate_image(prompt)
+            image = ImageService(prompt)
             if image:
                 st.image(image, caption="Generated Image", use_container_width=True)
     else:
         st.warning("Please enter a description for the image!")
->>>>>>> 9a4412dd33a7b2847d628631cbc410b4147f9fb3
