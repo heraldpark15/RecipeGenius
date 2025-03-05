@@ -1,12 +1,16 @@
 import streamlit as st
+from sidebar import Sidebar
 
 class ChatInterface:
     def __init__(self, state_manager_, openai_service, image_service):
         self.state_manager = state_manager_
         self.openai_service = openai_service
         self.image_service = image_service
+        self.sidebar = Sidebar(self.state_manager)
     
     def run(self):
+        self.sidebar.display()
+        
         for msg in self.state_manager.messages:
             st.chat_message(msg["role"]).write(msg["content"])
         
@@ -124,14 +128,7 @@ class ChatInterface:
                 st.session_state["saved_recipe_image"] = st.session_state["generated_image"]
             
             st.success("Your recipe and image have been saved!")
-            if "saved_recipe_iamge" in st.session_state:
+            if "saved_recipe_image" in st.session_state:
                 st.image(st.session_state["saved_recipe_image"], caption="Saved Recipe Image")
-    
-    def display_saved_recipe_and_image(self):
-        if "saved_recipe" in st.session_state:
-            st.subheader("Saved Recipe:")
-            st.write(st.session_state["saved_recipe"])
         
-        if "saved_recipe_image" in st.session_state:
-            st.subheader("Recipe Image")
-            st.image(st.session_state["saved_recipe_image"], caption="Saved Recipe Image")
+            self.sidebar.display()
