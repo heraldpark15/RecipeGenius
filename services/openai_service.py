@@ -1,13 +1,15 @@
 from openai import OpenAI
-# from config import API_KEY, BASE_URL
+from dotenv import load_dotenv
+import os
 
-API_KEY = "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"
-BASE_URL = "https://openrouter.ai/api/v1"
+load_dotenv()
 
 class OpenAIService:
+    API_KEY = os.getenv("API_KEY")
+    BASE_URL = os.getenv("BASE_URL")
+
     def __init__(self):
-        print(API_KEY)
-        self.client = OpenAI(base_url=BASE_URL, api_key=API_KEY)
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
 
     def generate_recipe(self, chat_history, user_profile):
         # Unpack user_profile
@@ -23,15 +25,15 @@ class OpenAIService:
                 '''
         
         if dietary_preference:
-            system_message_content += f"\nUser prefers a {dietary_preference} diet. Please mention this in your output"
+            system_message_content += f"\nUser prefers a {dietary_preference} diet. Please take this into account when suggesting recipes"
         if allergies:
-            system_message_content += f"\nUser has the following allergies: {allergies}. Please mention this in your output"
+            system_message_content += f"\nUser has the following allergies: {allergies}. Avoid including these ingredients in the recipe"
         
         system_message = {
             "role": "system",
             "content": system_message_content
         }
-        
+
         messages = [system_message] + chat_history
 
         response = self.client.chat.completions.create(
