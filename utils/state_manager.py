@@ -13,6 +13,9 @@ class StateManager:
         
         if "initial_message_shown" not in st.session_state:
             st.session_state["initial_message_shown"] = False
+
+        if "saved_recipe" not in st.session_state:
+            st.session_state["saved_recipe"] = "Nothing Yet!"
     
     @property
     def profile(self):
@@ -25,6 +28,10 @@ class StateManager:
     @property
     def button_clicked(self):
         return st.session_state["button_clicked"]
+    
+    @property
+    def saved_recipe(self):
+        return st.session_state["saved_recipe"]
 
     def set_button_clicked(self, value):
         st.session_state["button_clicked"] = value
@@ -51,3 +58,9 @@ class StateManager:
             )
             st.session_state.messages.append({"role": "assistant", "content": initial_message})
             st.chat_message("assistant").write(initial_message)
+    
+    def add_saved_recipe(self, saved_recipe):
+        if saved_recipe:
+            if st.session_state["saved_recipe"] == "Nothing Yet!":
+                st.session_state["saved_recipe"] = []
+            st.session_state["saved_recipe"].append(saved_recipe)
