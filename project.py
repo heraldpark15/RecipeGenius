@@ -1,19 +1,14 @@
 import streamlit as st
 from openai import OpenAI
+from imageGeneration import generate_image
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import os
-from services.image_service import ImageService
-from dotenv import load_dotenv
-
-load_dotenv()  
-api_key = os.getenv("API_KEY")
+from io import BytesIO
 
 # Sidebar for OpenAI API Key
 with st.sidebar:
-    # Uncomment block for deployment
-    # openai_api_key = st.text_input("Enter Your API Key", key="chatbot_api_key", type="password")
-    
-    # Use for development only
-    openai_api_key = api_key
+    openai_api_key = st.text_input("Enter Your API Key", key="chatbot_api_key", type="password")
 
 # App title
 st.title("RecipeGenius 🧞 - From Ingredients to Plate 🍽️")
@@ -23,10 +18,26 @@ if not openai_api_key:
     st.warning("Please enter your OpenAI API key in the sidebar to continue.")
     st.stop()
 
-client = OpenAI(
-  base_url="https://openrouter.ai/api/v1",
-  api_key=openai_api_key,
-)
+openai_api_key = "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"  # Replace with your actual key
+
+os.environ["OPENAI_API_KEY"] = openai_api_key
+
+client = OpenAI()
+
+def generate_pdf(recipe_text):
+    """Creates a PDF file in memory with the given recipe text."""
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    pdf.setFont("Helvetica", 12)
+    
+    y_position = 750  # Start position for text
+    for line in recipe_text.split("\n"):
+        pdf.drawString(50, y_position, line)
+        y_position -= 20  # Move down for the next line
+
+    pdf.save()
+    buffer.seek(0)
+    return buffer
 
 # Initialize session state for user profile and other variables
 if "user_profile" not in st.session_state:
@@ -37,12 +48,13 @@ if "user_profile" not in st.session_state:
 
 # Ensure 'button_clicked' and 'messages' are initialized
 if "button_clicked" not in st.session_state:
-    st.session_state["button_clicked"] = None  
+    st.session_state["button_clicked"] = None  # Initialize button state to None
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
         {"role": "system", "content": "You are a recipe idea generator that helps create unique, interesting dishes and drinks."}
     ]
+
 
 # Sidebar user profile setup
 st.sidebar.subheader("🎯 Personalize Your Experience")
@@ -51,8 +63,8 @@ st.sidebar.subheader("🎯 Personalize Your Experience")
 dietary_preference = st.sidebar.selectbox("Do you have any dietary preferences?", 
                                           ["Select", "Vegetarian", "Vegan", "None"])
 
-# Input for allergies (TODO: clean text input)
-allergies = st.sidebar.text_area("Please list allergies, if any (comma separated, e.g., nuts, gluten)", 
+# Input for allergies
+allergies = st.sidebar.text_area("List your allergies (comma separated, e.g., nuts, gluten)", 
                                  placeholder="e.g., nuts, gluten")
 
 if dietary_preference != "Select":
@@ -107,40 +119,6 @@ if st.session_state["initial_message_shown"]:
 # Handle button click responses
 if st.session_state["button_clicked"] == "ingredients":
     msg = "Great! Please list the ingredients you have, and I'll suggest a recipe considering your dietary preferences and allergies."
-
-client = OpenAI(
-  base_url="https://openrouter.ai/api/v1",
-  api_key="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",
-)
-
-
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {"role": "system", "content": "You are a recipe idea generator that helps create unique, interesting dishes and drinks."},
-        {"role": "assistant", "content": "Hey friend! I'm here to help you plan your whole meal, from the ingredients to the drinks. Would you like to provide ingredients to use or an idea of what you want?"}
-    ]
-    st.session_state["button_clicked"] = None
-
-
-
-# Display chat history
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
-
-# Display buttons only after the first assistant message
-if not st.session_state["button_clicked"]:
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Ingredients"):
-            st.session_state["button_clicked"] = "ingredients"
-    with col2:
-        if st.button("Ideas"):
-            st.session_state["button_clicked"] = "ideas"
-
-# Handle button click responses
-if st.session_state["button_clicked"] == "ingredients":
-    msg = "Great! Please list the ingredients you have, and I'll suggest a recipe."
     st.session_state.messages.append({"role": "assistant", "content": msg})
     st.chat_message("assistant").write(msg)
     st.session_state["button_clicked"] = None  # Reset to allow further interaction
@@ -152,7 +130,6 @@ elif st.session_state["button_clicked"] == "ideas":
     st.session_state["button_clicked"] = None  # Reset to allow further interaction
 
 # Chat input for recipe generation
-# Chat input
 if prompt := st.chat_input():
     if not openai_api_key:
         st.info("Please add your OpenAI API key to continue.")
@@ -165,89 +142,116 @@ if prompt := st.chat_input():
     # Create a custom prompt considering dietary preferences and allergies
     dietary_preference = st.session_state["user_profile"]["dietary_preference"]
     allergies = st.session_state["user_profile"]["allergies"]
-
-    system_message = """
-    You are a recipe generator that provides only the recipe format requested: 
-    1. Title of the Dish (as a title)
-    2. List of ingredients
-    3. Steps to prepare
-    4. Suggested Drink to pair with this dish (name of the drink and ingredients)
-    Do not include any reasoning, inner thoughts, or additional explanations. Only provide the recipe in the specified format. Avoid repeating recipes you've suggested earlier.
-    """
+    non_vegetarian_ingredients = ['chicken', 'beef', 'pork', 'lamb', 'fish', 'shrimp', 'bacon', 'turkey', 'duck']
+    non_vegan_ingredients = ['chicken', 'beef', 'pork', 'lamb', 'fish', 'shrimp', 'bacon', 'turkey', 'duck', 'milk', 'cheese', 'butter', 'eggs', 'honey']
     
-
-    with st.spinner("Looking for the perfect dish... almost ready!"):
-        # Make API request to OpenAI
-        response = client.chat.completions.create(
-            model="deepseek/deepseek-r1:free",
-            messages=[{"role": "system", "content": system_message}] + 
-                     [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages if msg["role"] in ["user", "assistant"]]
-        )
-
-    msg = response.choices[0].message.content
-
-    st.session_state.messages.append({"role": "assistant", "content": msg})
-    st.chat_message("assistant").write(msg)
-
-    # Generate image of the plate based on the dish description
-    with st.spinner("Generating image of the plate..."):
-        image = ImageService(msg)  # Generate image from the recipe text
-        if image:
-            # Apply custom CSS to center the image
-            st.markdown("""
-                <style>
-                    .stImage img {
-                        display: block;
-                        margin-left: auto;
-                        margin-right: auto;
-                        width: 500px;  /* Adjust image width */
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            st.image(image, caption="Generated Image", use_container_width=False)
-        else:
-            st.error("Image generation failed. Please try again later.")
-
-    follow_up_message = "Would you like to try another recipe or need anything else?"
-    st.session_state.messages.append({"role": "assistant", "content": follow_up_message})
-    st.chat_message("assistant").write(follow_up_message)
-
-    with st.container():
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Yes, give me another recipe!"):
-                # Logic for generating another recipe or resetting
-                st.session_state["button_clicked"] = None  # Reset button state
-                st.session_state["messages"].clear()  # Clear previous messages to start fresh
-                st.experimental_rerun()  # Re-run the app to restart the process
-
-        with col2:
-            if st.button("No, I'm done for now!"):
-                st.session_state["button_clicked"] = None  # Reset state if needed
-                st.session_state["messages"].clear()  # Clear previous messages (optional)
-                st.write("Thanks for using RecipeGenius! Have a great day!")  # Show the thank you message
+    user_ingredients = [ingredient.strip().lower() for ingredient in prompt.split(",")]
+    
+    allergens_found = [allergen for allergen in allergies if allergen.lower() in user_ingredients]
+    
+    non_veg_found = [ingredient for ingredient in user_ingredients if ingredient in non_vegetarian_ingredients]
+    non_vegan_found = [ingredient for ingredient in user_ingredients if ingredient in non_vegan_ingredients]
 
 
-    # client = OpenAI(api_key=openai_api_key)
-    response = client.chat.completions.create(
-        model="deepseek/deepseek-r1:free",
-        messages=st.session_state.messages
-    )
-    msg = response.choices[0].message.content
+    if allergens_found:
+        # If an allergen is found, notify the user and do NOT proceed further
+        warning_message = f"🚨 Sorry, but you included something you are allergic to: {', '.join(allergens_found)}. Would you like to provide different ingredients?"
+        st.chat_message("assistant").write(warning_message)
+        st.session_state.messages.append({"role": "assistant", "content": warning_message})
+    
+    elif dietary_preference == "Vegan" and non_vegan_found:
+        warning_message = f"🚨 The ingredient(s) {', '.join(non_vegan_found)} are not suitable for a Vegan diet. Would you like to provide different ingredients?"
+        st.chat_message("assistant").write(warning_message)
+        st.session_state.messages.append({"role": "assistant", "content": warning_message})
 
-    # Append assistant response
-    st.session_state.messages.append({"role": "assistant", "content": msg})
-    st.chat_message("assistant").write(msg)
+    # Vegetarian warning
+    elif dietary_preference == "Vegetarian" and non_veg_found:
+        warning_message = f"🚨 The ingredient(s) {', '.join(non_veg_found)} are not suitable for a Vegetarian diet. Would you like to provide different ingredients?"
+        st.chat_message("assistant").write(warning_message)
+        st.session_state.messages.append({"role": "assistant", "content": warning_message})
 
-# User prompt for image generation
-prompt = st.text_input("Enter a dish name or description:")
-
-if st.button("Generate Image"):
-    if prompt:
-        with st.spinner("Generating image..."):
-            image = ImageService(prompt)
-            if image:
-                st.image(image, caption="Generated Image", use_container_width=True)
     else:
-        st.warning("Please enter a description for the image!")
+
+        system_message = '''
+                    "You are a recipe generator. Provide recipes in this format:\n"
+                    "1. Title of the Dish\n2. List of ingredients\n3. Steps to prepare\n"
+                    "4. Suggested Drink Pairing (with ingredients)"
+                    "Do not include any reasoning, inner thoughts, or additional explanations. Only provide the recipe in the specified format. Avoid repeating recipes you've suggested earlier."
+                    "If the user asks about content that is not related to recipe generation, please reply with 'Sorry, I am not equipped to answer questions unrelated to recipe generation'"
+                '''
+        if dietary_preference:
+                system_message += f"\nPlease make sure the recipe is suitable for a {dietary_preference} diet."
+        if allergies:
+                system_message += f"\nAvoid including the following allergens in the recipe: {allergies}."
+        
+
+        with st.spinner("Looking for the perfect dish... almost ready!"):
+            # Make API request to OpenAI
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": system_message}] + 
+                        [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages if msg["role"] in ["user", "assistant"]]
+            )
+
+        msg = response.choices[0].message.content
+
+        st.session_state.messages.append({"role": "assistant", "content": msg})
+        st.chat_message("assistant").write(msg)
+
+
+        # Generate image of the plate based on the dish description
+        with st.spinner("Generating image of the plate..."):
+            image = generate_image(msg)  # Generate image from the recipe text
+            if image:
+                # Apply custom CSS to center the image
+                st.markdown("""
+                    <style>
+                        .stImage img {
+                            display: block;
+                            margin-left: auto;
+                            margin-right: auto;
+                            width: 500px;  /* Adjust image width */
+                        }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                st.image(image, caption="Generated Image", use_container_width=False)
+            else:
+                st.error("Image generation failed. Please try again later.")
+
+        if "messages" in st.session_state and st.session_state["messages"]:
+            last_message = st.session_state["messages"][-1]
+            if last_message["role"] == "assistant":
+                recipe_text = last_message["content"]
+
+                # Create PDF from recipe text
+                pdf_file = generate_pdf(recipe_text)
+
+                # Add a download button
+                st.download_button(
+                    label="📥 Download Recipe as PDF",
+                    data=pdf_file,
+                    file_name="recipe.pdf",
+                    mime="application/pdf"
+                )
+
+        follow_up_message = "Would you like to try another recipe or need anything else?"
+        st.session_state.messages.append({"role": "assistant", "content": follow_up_message})
+        st.chat_message("assistant").write(follow_up_message)
+
+        with st.container():
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Yes, give me another recipe!"):
+                    # Logic for generating another recipe or resetting
+                    st.session_state["button_clicked"] = None  # Reset button state
+                    st.session_state["messages"].clear()  # Clear previous messages to start fresh
+                    st.experimental_rerun()  # Re-run the app to restart the process
+
+            with col2:
+                if st.button("No, I'm done for now!"):
+                    st.session_state["button_clicked"] = None  # Reset state if needed
+                    st.session_state["messages"].clear() 
+                    st.session_state["initial_message_shown"] = False 
+                    st.write("Thanks for using RecipeGenius! Have a great day!")  # Show the thank you message
+
