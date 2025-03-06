@@ -25,9 +25,9 @@ class OpenAIService:
                 '''
         
         if dietary_preference:
-            system_message_content += f"\nUser prefers a {dietary_preference} diet. Please take this into account when suggesting recipes"
+            system_message_content += f"\nPlease make sure the recipe is suitable for a {dietary_preference} diet."
         if allergies:
-            system_message_content += f"\nUser has the following allergies: {allergies}. Avoid including these ingredients in the recipe"
+            system_message_content += f"\nAvoid including the following allergens in the recipe: {allergies}."
         
         system_message = {
             "role": "system",
