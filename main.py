@@ -11,6 +11,10 @@ st.title("RecipeGenius 🧞 - From Ingredients to Plate 🍽️")
 state_manager = StateManager()
 openai_service = OpenAIService()
 
+# Run sidebar
+sidebar = Sidebar(state_manager)
+sidebar.display()
+
 # Chat interface
 chat_interface = ChatInterface(state_manager, openai_service, ImageService)
 chat_interface.run()
