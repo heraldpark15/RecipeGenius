@@ -1,16 +1,13 @@
 import streamlit as st
-from sidebar import Sidebar
+from utils.generate_pdf import generate_pdf
 
 class ChatInterface:
     def __init__(self, state_manager_, openai_service, image_service):
         self.state_manager = state_manager_
         self.openai_service = openai_service
         self.image_service = image_service
-        self.sidebar = Sidebar(self.state_manager)
     
     def run(self):
-        self.sidebar.display()
-        
         for msg in self.state_manager.messages:
             st.chat_message(msg["role"]).write(msg["content"])
         
@@ -59,7 +56,9 @@ class ChatInterface:
         st.chat_message("user").write(user_input)
 
         user_profile = {}
-        
+
+        user_ingredients = [ingredient.strip().lower() for ingredient in user_input.split(",")]
+
         dietary_preference = st.session_state["profile"].get("dietary_preference")
         if dietary_preference:
             user_profile["dietary_preference"] = dietary_preference
@@ -68,21 +67,42 @@ class ChatInterface:
         if allergies:
             user_profile["allergies"] = allergies
 
-        # Get response from OpenAI
-        with st.spinner("Generating recipe..."):
-            response = self.openai_service.generate_recipe(self.state_manager.messages, user_profile)
-        
-        self.state_manager.add_message("assistant", response)
-        st.chat_message("assistant").write(response)
+        check_allergies = self.state_manager.check_allergies(user_ingredients)
+        check_diet = self.state_manager.check_diet(user_ingredients)
 
-        self.generate_image(response)
+        if check_allergies:
+            # If an allergen is found, notify the user and do NOT proceed further
+            warning_message = f"🚨 Sorry, but you included something you are allergic to: {check_allergies}. Would you like to provide different ingredients?"
+            st.chat_message("assistant").write(warning_message)
+            st.session_state.messages.append({"role": "assistant", "content": warning_message})
+    
+        elif dietary_preference == "Vegan" and check_diet:
+            warning_message = f"🚨 The ingredient(s) {', '.join(check_diet)} are not suitable for a Vegan diet. Would you like to provide different ingredients?"
+            st.chat_message("assistant").write(warning_message)
+            st.session_state.messages.append({"role": "assistant", "content": warning_message})
 
-        st.session_state["final_recipe"] = response
-        st.session_state["final_recipe_message"] = user_input
+        # Vegetarian warning
+        elif dietary_preference == "Vegetarian" and check_diet:
+            warning_message = f"🚨 The ingredient(s) {', '.join(check_diet)} are not suitable for a Vegetarian diet. Would you like to provide different ingredients?"
+            st.chat_message("assistant").write(warning_message)
+            st.session_state.messages.append({"role": "assistant", "content": warning_message})
 
-        self.show_save_recipe_button()
+        else:
+            # Get response from OpenAI
+            with st.spinner("Looking for the perfect dish...almost ready!"):
+                response = self.openai_service.generate_recipe(self.state_manager.messages, user_profile)
+            
+            self.state_manager.add_message("assistant", response)
+            st.chat_message("assistant").write(response)
 
-        self.ask_follow_up()
+            self.generate_image(response)
+
+            st.session_state["final_recipe"] = response
+            st.session_state["final_recipe_message"] = user_input
+
+            self.show_save_recipe_button()
+
+            self.ask_follow_up()
     
     def generate_image(self, recipe_text):
         with st.spinner("Generating image of the plate..."):
@@ -112,23 +132,30 @@ class ChatInterface:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Yes, give me another recipe!"):
+                    st.write("Button 1")
+
                     self.state_manager.reset_session()
                     st.experimental_rerun()
 
             with col2:
                 if st.button("No, I'm done for now!"):
+                    st.write("Button 2")
+                    message = "Thanks for using RecipeGenius! Have a great day!"
+                    self.state_manager.add_message("assistant", message)
+                    st.chat_message("assistant").write(message)
                     self.state_manager.reset_session()
-                    st.write("Thanks for using RecipeGenius! Have a great day!")
 
     def show_save_recipe_button(self):
-        save_button = st.button("Click here to save this recipe")
-        if save_button:
-            st.session_state["saved_recipe"] = st.session_state["final_recipe"]
-            if "generated_image" in st.session_state:
-                st.session_state["saved_recipe_image"] = st.session_state["generated_image"]
-            
-            st.success("Your recipe and image have been saved!")
-            if "saved_recipe_image" in st.session_state:
-                st.image(st.session_state["saved_recipe_image"], caption="Saved Recipe Image")
-        
-            self.sidebar.display()
+        last_message = st.session_state["messages"][-1]
+        if last_message["role"] == "assistant":
+            st.write(last_message["content"])
+            recipe_text = last_message["content"]
+
+            pdf_file = generate_pdf(recipe_text)
+
+            st.download_button(
+                label="📥 Download Recipe as PDF",
+                data=pdf_file,
+                file_name="recipe.pdf",
+                mime="application/pdf"
+            )
