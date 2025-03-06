@@ -9,7 +9,7 @@ class OpenAIService:
     BASE_URL = os.getenv("BASE_URL")
 
     def __init__(self):
-        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
 
     def generate_recipe(self, chat_history, user_profile):
         # Unpack user_profile
