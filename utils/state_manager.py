@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.diet_profile import DietProfile
 
 class StateManager:
     def __init__(self):
@@ -16,6 +17,11 @@ class StateManager:
 
         if "saved_recipe" not in st.session_state:
             st.session_state["saved_recipe"] = "Nothing Yet!"
+
+        self.diet_profile = DietProfile(
+            dietary_preference=st.session_state["profile"]["dietary_preference"],
+            allergies=st.session_state["profile"]["allergies"]
+        )
     
     @property
     def profile(self):
@@ -43,10 +49,19 @@ class StateManager:
         st.session_state["messages"].append({"role": role, "content": content})
 
     def update_user_profile(self, dietary_preference, allergies):
+        allergies = [a.lower().strip() for a in allergies.split(",")]
         if dietary_preference != "Select":
             st.session_state["profile"]["dietary_preference"] = dietary_preference
         if allergies:
-            st.session_state["profile"]["allergies"] = [a.lower().strip() for a in allergies.split(",")]
+            st.session_state["profile"]["allergies"] = allergies
+        self.diet_profile.set_dietary_preference(dietary_preference)
+        self.diet_profile.set_allergies(allergies)
+    
+    def check_allergies(self, user_ingredients):
+        return self.diet_profile.find_allergen(user_ingredients)
+
+    def check_diet(self, user_ingredients):
+        return self.diet_profile.check_diet(user_ingredients)
     
     def show_initial_message(self):
         if not st.session_state["initial_message_shown"]:
