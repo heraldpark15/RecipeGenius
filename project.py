@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-from imageGeneration import generate_image
+from services.image_service import ImageService
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import os
@@ -18,7 +18,7 @@ if not openai_api_key:
     st.warning("Please enter your OpenAI API key in the sidebar to continue.")
     st.stop()
 
-openai_api_key = ""  # Replace with your actual key
+openai_api_key = "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"  # Replace with your actual key
 
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
@@ -201,7 +201,7 @@ if prompt := st.chat_input():
 
         # Generate image of the plate based on the dish description
         with st.spinner("Generating image of the plate..."):
-            image = generate_image(msg)  # Generate image from the recipe text
+            image = ImageService.generate_image(msg)  # Generate image from the recipe text
             if image:
                 # Apply custom CSS to center the image
                 st.markdown("""
