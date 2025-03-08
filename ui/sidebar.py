@@ -15,12 +15,6 @@ class Sidebar:
         
         self.state_manager.update_user_profile(dietary_preference, allergies)
 
-        st.sidebar.write("### Your Profile:")
-        st.sidebar.write(f"**Dietary Preference:** {self.state_manager.profile['dietary_preference']}")
-        st.sidebar.write(f"**Allergies:** {', '.join(self.state_manager.profile['allergies']) if self.state_manager.profile['allergies'] else 'None'}")
-
-        st.sidebar.write("### Saved Recipes:")
-        st.sidebar.write(f"{self.state_manager.saved_recipe}")
-        
-        if "saved_recipe_image" in st.session_state:
-            st.sidebar.image(st.session_state["saved_recipe_image"], caption="Saved Recipe")
+        st.sidebar.markdown("### Your Profile:")
+        st.sidebar.markdown(f"**Dietary Preference:** {self.state_manager.profile['dietary_preference']}")
+        st.sidebar.markdown(f"**Allergies:** {', '.join(self.state_manager.profile['allergies']) if self.state_manager.profile['allergies'] else 'None'}")
