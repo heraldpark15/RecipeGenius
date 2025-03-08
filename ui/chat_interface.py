@@ -37,7 +37,7 @@ class ChatInterface:
             self.handle_button_click()
 
         user_input = st.chat_input("Enter your message:")
-        if user_input:
+        if user_input and user_input.strip():
             self.process_user_input(user_input)
         
     def handle_button_click(self):
@@ -90,17 +90,18 @@ class ChatInterface:
         else:
             # Get response from OpenAI
             with st.spinner("Looking for the perfect dish...almost ready!"):
-                response = self.openai_service.generate_recipe(self.state_manager.messages, user_profile)
+                response, is_recipe = self.openai_service.generate_recipe(self.state_manager.messages, user_profile)
             
             self.state_manager.add_message("assistant", response)
             st.chat_message("assistant").write(response)
 
-            self.generate_image(response)
+            if is_recipe:
+                self.generate_image(response)
 
-            st.session_state["final_recipe"] = response
-            st.session_state["final_recipe_message"] = user_input
+                st.session_state["final_recipe"] = response
+                st.session_state["final_recipe_message"] = user_input
 
-            self.show_save_recipe_button()
+                self.show_save_recipe_button()
 
             self.ask_follow_up()
     
@@ -131,7 +132,7 @@ class ChatInterface:
         with st.container():
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Yes, give me another recipe!"):
+                if st.button("Yes, let's try again!"):
                     st.write("Button 1")
 
                     self.state_manager.reset_session()
@@ -148,14 +149,14 @@ class ChatInterface:
     def show_save_recipe_button(self):
         last_message = st.session_state["messages"][-1]
         if last_message["role"] == "assistant":
-            st.write(last_message["content"])
             recipe_text = last_message["content"]
 
             pdf_file = generate_pdf(recipe_text)
-
+            
             st.download_button(
-                label="📥 Download Recipe as PDF",
+                label="Download Recipe as PDF",
                 data=pdf_file,
                 file_name="recipe.pdf",
-                mime="application/pdf"
+                mime="application/pdf",
+                icon=":material/download:",
             )
