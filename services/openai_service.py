@@ -9,7 +9,7 @@ class OpenAIService:
     BASE_URL = os.getenv("BASE_URL")
 
     def __init__(self):
-        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
 
     def generate_recipe(self, chat_history, user_profile):
         # Unpack user_profile
@@ -22,6 +22,7 @@ class OpenAIService:
                     "4. Suggested Drink Pairing (with ingredients)"
                     "Do not include any reasoning, inner thoughts, or additional explanations. Only provide the recipe in the specified format. Avoid repeating recipes you've suggested earlier."
                     "If the user asks about content that is not related to recipe generation, please reply with 'Sorry, I am not equipped to answer questions unrelated to recipe generation'"
+                    "If the user input is not suitable for creating recipes, reply with 'Sorry, I could not understand the inputs. Could you please try again?'"
                 '''
         
         if dietary_preference:
@@ -41,4 +42,7 @@ class OpenAIService:
             messages=messages
         )
 
-        return response.choices[0].message.content
+        response_text = response.choices[0].message.content
+        is_recipe = "sorry" not in response_text.lower()
+
+        return response_text, is_recipe
