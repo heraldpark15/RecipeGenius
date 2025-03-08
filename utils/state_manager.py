@@ -4,11 +4,12 @@ from utils.diet_profile import DietProfile
 class StateManager:
     def __init__(self):
         if "profile" not in st.session_state:
-            st.session_state["profile"] = {"dietary_preference": None, "allergies": []}
+            st.session_state["profile"] = {"dietary_preference": None, "allergies": None}
         if "messages" not in st.session_state:
-            st.session_state["messages"] = [
-                {"role": "system", "content": "You are a recipe idea generator."}
-            ]
+            # st.session_state["messages"] = [
+            #     {"role": "system", "content": "You are a recipe idea generator."}
+            # ]
+            st.session_state["messages"] = []
         if "button_clicked" not in st.session_state:
             st.session_state["button_clicked"] = None
         
