@@ -1,15 +1,11 @@
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from config import API_KEY, BASE_URL
 
 class OpenAIService:
-    API_KEY = os.getenv("API_KEY")
-    BASE_URL = os.getenv("BASE_URL")
-
     def __init__(self):
-        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
+        self.api_key = API_KEY
+        self.base_url = BASE_URL
+        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
 
     def generate_recipe(self, chat_history, user_profile):
         # Unpack user_profile
