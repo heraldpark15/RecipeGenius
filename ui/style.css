@@ -1,0 +1,45 @@
+/* Style the input fields and buttons at the bottom */
+.stTextInput input,
+.stTextArea textarea {
+  background-color: #f0f2f6; /* Light grey background */
+  color: #333; /* Dark text color */
+  font-size: 16px; /* Font size */
+  padding: 10px; /* Padding inside input fields */
+  border-radius: 8px; /* Rounded corners */
+  border: 2px solid #ddd; /* Light grey border */
+  width: 100%; /* Full width */
+  box-sizing: border-box; /* Ensure padding is included in width calculation */
+}
+
+.stTextInput input:focus,
+.stTextArea textarea:focus {
+  border-color: #0078d4; /* Blue border when focused */
+  box-shadow: 0px 0px 10px rgba(0, 120, 212, 0.4); /* Focus effect */
+}
+
+.stButton > button {
+  background-color: #0078d4; /* Button background */
+  color: white; /* White text */
+  border: none; /* No border */
+  padding: 12px 20px; /* Padding */
+  font-size: 16px; /* Font size */
+  font-weight: bold; /* Font weight */
+  border-radius: 8px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s ease, transform 0.2s; /* Transition effects */
+}
+
+.stButton > button:hover {
+  background-color: #005a9e; /* Darker blue on hover */
+  transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+.stTextInput input,
+.stTextArea textarea {
+  transition: background-color 0.3s ease;
+}
+
+/* Specific styles for text area input field */
+.stTextArea textarea {
+  height: 120px; /* Adjust height */
+}
