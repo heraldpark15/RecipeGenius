@@ -6,6 +6,6 @@ This project is part of Grad 5900: Applied Generative AI at the University of Co
 Utilizes:
 
 - text-to-image diffusion models
-- LangChain
 - DeepSeek R1 API
 - Python
+- Streamlit
