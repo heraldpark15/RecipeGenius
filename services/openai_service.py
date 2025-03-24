@@ -5,7 +5,7 @@ class OpenAIService:
     def __init__(self):
         self.api_key = API_KEY
         self.base_url = BASE_URL
-        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+        self.client = OpenAI(base_url=self.base_url, api_key="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")
 
     def generate_recipe(self, chat_history, user_profile):
         # Unpack user_profile
